@@ -43,10 +43,7 @@ const initDb = async () => {
 
 // Middleware
 app.use(express.json());
-app.use(cors({
-    origin: process.env.FRONTEND_URL || '*',
-    credentials: true,
-}));
+app.use(cors());
 
 
 // DB readiness middleware — runs before every request in production
