@@ -1,4 +1,4 @@
-# Amazon 2.0 E-Commerce Application
+# AmazonClone E-Commerce Application
 
 A full-stack e-commerce application inspired by Amazon, built with modern web technologies.
 
@@ -141,25 +141,6 @@ amazon-2.0/
     └── vercel.json
 ```
 
-## Deployment
-
-This application is configured for deployment on Vercel:
-
-1. Connect your GitHub repository to Vercel
-2. Set environment variables in Vercel dashboard
-3. Deploy the backend and frontend separately or use monorepo configuration
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Acknowledgments
 
