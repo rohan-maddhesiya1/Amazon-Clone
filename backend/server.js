@@ -44,7 +44,7 @@ const initDb = async () => {
 // Middleware
 app.use(express.json());
 app.use(cors({
-    origin: process.env.FRONTEND_URL || '*',
+    origin: process.env.FRONTEND_URL ? [process.env.FRONTEND_URL, process.env.FRONTEND_URL.replace(/\/$/, '')] : '*',
     credentials: true,
 }));
 
