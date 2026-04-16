@@ -1,0 +1,237 @@
+Amazon Clone Backend API Documentation
+=====================================
+
+Base URL
+--------
+- Development: http://localhost:5000
+- API prefix: /api
+- Health check: GET /
+
+Authentication
+--------------
+- Uses JWT bearer tokens.
+- Protected routes require the HTTP header:
+  Authorization: Bearer <token>
+
+Environment Variables
+---------------------
+- DB_NAME: MySQL database name
+- DB_USER: MySQL username
+- DB_PASSWORD: MySQL password
+- DB_HOST: MySQL host
+- JWT_SECRET: Secret used to sign JWT tokens
+- PORT: Optional server port (default 5000)
+
+Data Models / Payload Shapes
+----------------------------
+
+User
+----
+Request body for signup:
+- name: string
+- email: string
+- password: string
+
+Login request body:
+- email: string
+- password: string
+
+Response after signup / login:
+{
+  "id": "uuid",
+  "name": "string",
+  "email": "string",
+  "token": "string"
+}
+
+Product
+-------
+Product fields returned by the API:
+- id: uuid
+- name: string
+- description: string
+- price: string (decimal, e.g. "49.99")
+- countInStock: integer
+- imageUrl: string
+- brand: string
+- rating: number
+- numReviews: integer
+- categoryId: integer (if category exists)
+- Category: object (category info when included)
+
+Cart Item
+---------
+Cart item fields returned:
+- id: integer
+- quantity: integer
+- userId: uuid
+- productId: uuid
+- Product: object (product details)
+
+Order
+-----
+Order fields returned:
+- id: uuid
+- shippingAddress: string
+- totalPrice: string
+- status: string (default "Pending")
+- userId: uuid
+- OrderItems: array of order items when returned with details
+
+OrderItem
+---------
+- quantity: integer
+- priceAtPurchase: string
+- productId: uuid
+- OrderId: uuid
+
+Endpoints
+---------
+
+1. Health Check
+---------------
+GET /
+- Description: Verifies server is running.
+- Response: plain text message.
+
+2. Authentication
+-----------------
+POST /api/auth/signup
+- Description: Register a new user.
+- Body:
+  {
+    "name": "string",
+    "email": "string",
+    "password": "string"
+  }
+- Success: 201 Created
+- Response:
+  {
+    "id": "uuid",
+    "name": "string",
+    "email": "string",
+    "token": "jwt-token"
+  }
+- Errors:
+  - 400 if user already exists
+  - 500 for server errors
+
+POST /api/auth/login
+- Description: Authenticate user and retrieve token.
+- Body:
+  {
+    "email": "string",
+    "password": "string"
+  }
+- Success: 200 OK
+- Response:
+  {
+    "id": "uuid",
+    "name": "string",
+    "email": "string",
+    "token": "jwt-token"
+  }
+- Errors:
+  - 401 if invalid credentials
+  - 500 for server errors
+
+GET /api/auth/profile
+- Description: Retrieve authenticated user profile.
+- Requires Authorization header.
+- Response:
+  {
+    "id": "uuid",
+    "name": "string",
+    "email": "string"
+  }
+- Errors:
+  - 401 if no token or invalid token
+
+3. Products
+-----------
+GET /api/products
+- Description: Get all products.
+- Query parameters allowed:
+  - search: string (filters by product name using LIKE)
+  - categoryId: integer (filters by category)
+- Response: array of product objects.
+
+GET /api/products/:id
+- Description: Get details for a single product.
+- Response: product object or 404 if not found.
+
+4. Cart
+-------
+All cart routes require Authorization: Bearer <token>.
+
+GET /api/cart
+- Description: Get current authenticated user's cart items.
+- Response: array of cart items with included Product details.
+
+POST /api/cart
+- Description: Add a product to the authenticated user's cart.
+- Body:
+  {
+    "productId": "uuid",
+    "quantity": integer
+  }
+- Behavior:
+  - If the item already exists, quantity is incremented.
+  - Otherwise, a new cart item is created.
+- Response: the created/updated cart item.
+
+DELETE /api/cart/:id
+- Description: Remove a cart item by cart item id.
+- Response:
+  {
+    "message": "Item removed"
+  }
+- Only the authenticated user's own cart items can be removed.
+
+5. Orders
+---------
+All order routes require Authorization: Bearer <token>.
+
+POST /api/orders
+- Description: Create a new order for the authenticated user.
+- Body:
+  {
+    "shippingAddress": "string",
+    "items": [
+      {
+        "productId": "uuid",
+        "quantity": integer,
+        "price": "string"
+      }
+    ],
+    "totalPrice": "string"
+  }
+- Behavior:
+  - Creates an Order record.
+  - Creates OrderItem records for each item.
+  - Clears the authenticated user's cart.
+- Response: the created order object.
+
+GET /api/orders
+- Description: Retrieve all orders for the authenticated user.
+- Response: array of orders, each including its OrderItems and their Product details.
+
+Additional Notes
+----------------
+- Product search and category filtering are both optional on GET /api/products.
+- The backend uses MySQL via Sequelize.
+- `CartItem` IDs are integers and are used for delete operations.
+- The JWT token expires in 30 days.
+
+Frontend Implementation Tips
+----------------------------
+- Save the token after login/signup in localStorage or secure storage.
+- Send `Authorization: Bearer <token>` for `/api/cart` and `/api/orders` routes.
+- For cart display, use `/api/cart` to fetch items and include product details.
+- For order creation, build the payload from the current cart, shipping address, and total price.
+- Use `/api/products` for product listing and filtering.
+
+Example Headers
+---------------
+Content-Type: application/json
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...

@@ -1,0 +1,30 @@
+@import "tailwindcss";
+
+@theme {
+  --color-amazon-dark: #131921;
+  --color-amazon-light: #232f3e;
+  --color-amazon-yellow: #f0c14b;
+  --color-amazon-orange: #f3a847;
+  --color-amazon-bg: #eaeded;
+}
+
+body {
+  background-color: var(--color-amazon-bg);
+  box-sizing: border-box;
+}
+
+#root {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Hide scrollbar but keep scroll functionality */
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.hide-scrollbar {
+  -ms-overflow-style: none;  /* IE & Edge */
+  scrollbar-width: none;     /* Firefox */
+}
