@@ -20,9 +20,56 @@ dotenv.config();
 
 const app = express();
 
+// ── DB Initialization (runs once per serverless cold start) ──────────────────
+let dbReady = false;
+let dbError = null;
+
+const initDb = async () => {
+    if (dbReady) return;
+    try {
+        await sequelize.authenticate();
+        console.log('✅ MySQL Connection established successfully.');
+        // Use { alter: false } in production to avoid table-lock timeouts on cold start
+        if (process.env.NODE_ENV !== 'production') {
+            await sequelize.sync({ alter: true });
+            console.log('✅ All models synchronized.');
+        }
+        dbReady = true;
+    } catch (error) {
+        dbError = error;
+        console.error('❌ Unable to connect to the database:', error.message);
+    }
+};
+
 // Middleware
-app.use(express.json()); // This must be BEFORE routes
-app.use(cors());
+app.use(express.json());
+app.use(cors({
+    origin: process.env.FRONTEND_URL || '*',
+    credentials: true,
+}));
+
+// DB readiness middleware — runs before every request in production
+app.use(async (req, res, next) => {
+    if (!dbReady) {
+        await initDb();
+    }
+    if (dbError && !dbReady) {
+        return res.status(503).json({
+            message: 'Database connection failed. Please check server configuration.',
+            error: process.env.NODE_ENV !== 'production' ? dbError.message : undefined,
+        });
+    }
+    next();
+});
+
+// Health Check
+app.get('/', (req, res) => {
+    res.json({
+        status: 'ok',
+        message: 'Amazon Clone API is running smoothly...',
+        db: dbReady ? 'connected' : 'disconnected',
+    });
+});
 
 // Routes
 app.use('/api/auth', authRoutes);
@@ -30,34 +77,23 @@ app.use('/api/products', productRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/orders', orderRoutes);
 
-// Health Check
-app.get('/', (req, res) => {
-    res.send('Amazon Clone API is running smoothly...');
+// Global error handler
+app.use((err, req, res, next) => {
+    console.error(err.stack);
+    res.status(500).json({ message: err.message || 'Internal Server Error' });
 });
 
-// Sync Database and Start Server
-const startServer = async () => {
-    try {
-        // Authenticate connection
-        await sequelize.authenticate();
-        console.log('✅ MySQL Connection has been established successfully.');
-
-        // Sync models to DB (alter: true updates tables without deleting data)
-        await sequelize.sync({ alter: true });
-        console.log('✅ All models were synchronized successfully.');
-
+// ── Local dev: start HTTP server ─────────────────────────────────────────────
+if (process.env.NODE_ENV !== 'production') {
+    const startServer = async () => {
+        await initDb();
         const PORT = process.env.PORT || 5000;
         app.listen(PORT, () => {
-            console.log(`🚀 Server is running on http://localhost:${PORT}`);
+            console.log(`🚀 Server running on http://localhost:${PORT}`);
         });
-    } catch (error) {
-        console.error('❌ Unable to connect to the database:', error);
-    }
-};
-
-// Only run the server manually if not in a Vercel serverless environment
-if (process.env.NODE_ENV !== 'production') {
+    };
     startServer();
 }
 
+// ── Vercel serverless export ─────────────────────────────────────────────────
 export default app;
