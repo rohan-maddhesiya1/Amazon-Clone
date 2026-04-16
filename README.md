@@ -1,4 +1,4 @@
-# Amazon 2.0 E-Commerce Application
+# AmazonClone E-Commerce Application
 
 A full-stack e-commerce application inspired by Amazon, built with modern web technologies.
 
