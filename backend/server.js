@@ -29,9 +29,9 @@ const initDb = async () => {
     try {
         await sequelize.authenticate();
         console.log('✅ MySQL Connection established successfully.');
-        // Use { alter: false } in production to avoid table-lock timeouts on cold start
+        // Use { alter: false } to avoid Sequelize creating duplicate foreign key indexes repeatedly
         if (process.env.NODE_ENV !== 'production') {
-            await sequelize.sync({ alter: true });
+            await sequelize.sync(); // Removed alter: true to fix the "Too many keys" error!
             console.log('✅ All models synchronized.');
         }
         dbReady = true;
